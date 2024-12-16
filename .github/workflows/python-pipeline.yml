@@ -118,10 +118,17 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          
+      - name: Checks quality gate
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          continue-on-error: false       
 
   build_and_publish_package:
     name: Build and Publish Package
     runs-on: ubuntu-latest
+    needs: quality_gate
     outputs:
       should_deploy: ${{ steps.set_deploy_output.outputs.should_deploy }}
     steps:
@@ -137,17 +144,16 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Check for Changes
-        id: check_changes
+        id: changes
         run: |
           git fetch origin development
-          if git diff --quiet HEAD origin/development -- .; then
-            echo "No changes detected."
-            echo "::set-output name=should_deploy::false"
+          if git diff --exit-code HEAD origin/development -- . > /dev/null; then
+            echo "Changes detected. Proceeding with version bump and deployment."
+            echo "should_deploy=true" >> $GITHUB_ENV
           else
-            echo "Changes detected."
-            echo "::set-output name=should_deploy::true"
-        continue-on-error: false  # Ensure proper failure propagation for debugging
-
+            echo "No changes detected. Skipping version bump and deployment."
+            echo "should_deploy=false" >> $GITHUB_ENV
+          fi
 
       - name: Set Deploy Output
         id: set_deploy_output
