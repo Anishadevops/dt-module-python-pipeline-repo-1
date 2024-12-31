@@ -68,7 +68,7 @@ jobs:
 
       - name: Run unit tests
         env:
-          PYTHONPATH: ./src
+          PYTHONPATH: ./sustainos_cement
         run: python -m unittest discover tests
 
       - name: Check for Pytest files
@@ -80,7 +80,7 @@ jobs:
 
       - name: Run pytest
         env:
-          PYTHONPATH: ./src
+          PYTHONPATH: ./sustainos_cement
         run: pytest tests --import-mode=append
 
   coverage_and_sonarqube:
